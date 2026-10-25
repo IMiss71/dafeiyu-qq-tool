@@ -1,0 +1,26 @@
+# 运行时产物
+wizard.port
+wizard.log
+wizard.err.log
+*.log
+
+# 可移植运行时（分发包才需要，仓库不含大二进制）
+tools/
+
+# 打包产物
+dist/
+release/
+_stage/
+BUILD.json
+
+# 运行时数据 / 本地测试
+data/
+NapCat/
+*.key
+keys.json
+activations.json
+blacklist.json
+
+# 系统杂项
+Thumbs.db
+desktop.ini
