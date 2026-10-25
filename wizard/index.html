@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大肥鱼 QQ AI 一键部署</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <span class="brand-fish">🐟</span>
+        <div>
+          <h1>大肥鱼 <span class="brand-tag">QQ AI</span><span class="brand-free">免费开源</span></h1>
+          <p class="sub">填好 Key，扫码登录小号，就能在 QQ 上和大肥鱼聊天</p>
+        </div>
+        <button id="aboutBtn" class="ghost tiny" style="margin-left:auto" title="开源许可与合规声明">关于</button>
+      </div>
+    </header>
+
+    <ol class="steps" id="steps">
+      <li data-step="0" class="active">须知</li>
+      <li data-step="1">环境</li>
+      <li data-step="2">安装</li>
+      <li data-step="3">模型</li>
+      <li data-step="4">人设</li>
+      <li data-step="5">登录 QQ</li>
+      <li data-step="6">完成</li>
+    </ol>
+
+    <!-- 关键项缺失时常驻提示（跳过安装也能看到，不会误以为已经装好） -->
+    <div id="statusBanner" class="status-banner" style="display:none"></div>
+
+    <!-- 离线提示：直接双击 html（没有后端）时显示，避免"点啥都没反应" -->
+    <div id="offlineBanner" class="offline-banner" style="display:none">
+      ⚠️ <b>后端未连接</b>：本工具需要先启动本地后端，才能安装软件、写配置、注入人设。<br>
+      请<b>关闭此页面</b>，改为双击工具目录里的 <b>「启动向导.bat」</b>（不要直接双击 index.html）。<br>
+      如果你是把这个工具发给朋友，也请提醒对方：先运行 <b>启动向导.bat</b>，它会自动开好这个页面。
+    </div>
+
+    <!-- 0 须知 / EULA -->
+    <section class="panel active" data-panel="0">
+      <h2>开始之前（必读）</h2>
+      <ul class="notes">
+        <li>
+          本工具基于开源项目 <b>AstrBot</b>（AGPL-3.0-or-later）与 <b>NapCat</b>（Limited Redistribution License）封装。
+          <b>本工具完全免费，不售卖、不代理、不代收任何第三方软件的授权费。</b>
+        </li>
+        <li>
+          <b>NapCat 由你自行获取（本工具只帮你点击下载与解压），其许可证禁止商业用途，仅限个人学习研究使用。</b>
+          QQ 接入属非官方协议，<b>务必使用 QQ 小号</b>，存在封号风险。
+        </li>
+        <li>你需要自备一个大模型 API Key（DeepSeek / 硅基流动 / OpenAI，或本机跑 Ollama 免费）。</li>
+        <li>工具内已附带 AstrBot / NapCat 的许可证说明与源码链接；使用即表示你接受它们各自的许可条款。</li>
+      </ul>
+      <label class="check"><input type="checkbox" id="eula" /> 我已阅读并接受上述说明，以及 AstrBot / NapCat 各自的许可条款（NapCat 仅限个人非商业使用）</label>
+      <div class="actions">
+        <button id="toEnv" class="primary" disabled>下一步</button>
+      </div>
+      <p class="hint" style="text-align:center;margin-top:10px">
+        本工具基于 <b>AstrBot</b>(AGPL-3.0) 与 <b>NapCat</b> 封装，完全免费开源 ·
+        <a href="javascript:void(0)" id="aboutLink" style="color:var(--accent)">查看开源许可与免责声明</a>
+      </p>
+    </section>
+
+    <!-- 1 环境 -->
+    <section class="panel" data-panel="1">
+      <h2>① 检测运行环境</h2>
+      <p class="hint">进入本页会自动扫描本机状态。<b>已装好的项目会标「✅ 可跳过」，不会重复安装。</b></p>
+      <div id="envChecklist" class="checklist">
+        <div class="row" data-key="uv"><span class="dot">…</span><span class="name">uv（Python 包管理器）</span><span class="badge"></span></div>
+        <div class="row" data-key="python"><span class="dot">…</span><span class="name">Python（uv 会自动装所需版本）</span><span class="badge"></span></div>
+        <div class="row" data-key="astrbot"><span class="dot">…</span><span class="name">AstrBot（核心框架）</span><span class="badge"></span></div>
+        <div class="row" data-key="configExists"><span class="dot">…</span><span class="name">AstrBot 数据目录已初始化</span><span class="badge"></span></div>
+        <div class="row" data-key="napcat"><span class="dot">…</span><span class="name">NapCat（QQ 协议）</span><span class="badge"></span></div>
+      </div>
+      <!-- 环境体检：把"别人电脑上会踩的坑"一次性查出来 -->
+      <div class="preflight" id="preflightBox">
+        <div class="pf-head">
+          <span class="pf-title">🩺 环境体检</span>
+          <span class="pf-sum" id="pfSummary">正在体检…</span>
+          <span class="pf-actions">
+            <button id="runPreflight" class="ghost">重新体检</button>
+            <button id="makeDiag" class="ghost" title="生成一份自动脱敏的诊断报告，发给客服即可排查">生成诊断报告</button>
+          </span>
+        </div>
+        <div class="pf-list" id="pfList"><div class="pf-empty">正在体检…</div></div>
+      </div>
+
+      <div class="progress-wrap" data-scope="env">
+        <div class="progress-head">
+          <span class="progress-phase">等待开始…</span>
+          <span class="progress-pct"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="progress-sub"></div>
+      </div>
+      <div class="actions">
+        <button id="checkEnv">重新检测</button>
+        <button id="installPre" class="primary">缺前置则一键装 uv/Python</button>
+        <button id="installAstr" class="primary">装/确认 AstrBot</button>
+        <button id="installNap" class="primary">一键装 NapCat</button>
+        <button id="resetEnv" class="ghost">清空重来</button>
+      </div>
+      <div class="actions">
+        <button id="toInstall" class="primary">下一步</button>
+      </div>
+    </section>
+
+    <!-- 2 安装 -->
+    <section class="panel" data-panel="2">
+      <h2>② 安装并初始化 AstrBot</h2>
+      <p class="hint">首次要下载约 130MB（Python 运行时 + 154 个依赖包）。向导会先测一遍国内各镜像的速度，挑最快的那个下，一般 40 秒左右；已装过的直接跳过。</p>
+
+      <div class="progress-wrap" data-scope="install">
+        <div class="progress-head">
+          <span class="progress-phase">等待开始…</span>
+          <span class="progress-pct"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="progress-sub"></div>
+      </div>
+
+      <div id="installLog" class="log">点击下方按钮，自动安装 AstrBot 并初始化数据目录。</div>
+      <div class="actions">
+        <button id="doInstall" class="primary">安装并初始化</button>
+        <button id="toModel" class="primary">下一步：填模型</button>
+      </div>
+    </section>
+
+    <!-- 3 模型 -->
+    <section class="panel" data-panel="3">
+      <h2>③ 填写大模型（云端或本地）</h2>
+      <p class="hint">云端模型不用下载、不用显卡，填一把 Key 就能跑，回复也比本地快。<b>建议选「硅基流动」</b>：注册送额度，一把 Key 同时搞定聊天和识图。</p>
+      <label>服务商
+        <select id="provider">
+          <option value="deepseek">DeepSeek（国内首选，便宜）</option>
+          <option value="siliconflow">硅基流动 SiliconFlow（注册送额度）</option>
+          <option value="dashscope">阿里百炼（通义千问，有免费额度）</option>
+          <option value="openai">OpenAI（质量高，贵，需代理）</option>
+          <option value="ollama">Ollama（本地免费，需本机跑模型）</option>
+          <option value="custom">自定义 / 中转站（OpenAI 兼容）</option>
+        </select>
+      </label>
+      <div id="presetNote" class="hint" style="margin:-4px 0 10px"></div>
+      <label>API Key
+        <input type="text" id="apiKey" placeholder="sk-...（选 Ollama 可留空）" />
+      </label>
+      <label>API Base URL（一般自动填好，可改）
+        <input type="text" id="apiBase" placeholder="https://api.deepseek.com/v1" />
+      </label>
+      <label>模型名（选好服务商和 Key 后，点「获取可用模型」自动列出来）
+        <span class="row-inline">
+          <input type="text" id="model" list="modelOptions" placeholder="deepseek-chat" autocomplete="off" />
+          <button id="fetchModels" class="mini" type="button">获取可用模型</button>
+        </span>
+        <datalist id="modelOptions"></datalist>
+      </label>
+
+      <label class="check"><input type="checkbox" id="modelVision" /> 这个模型能直接看图（多模态，如 gpt-4o / qwen-vl）</label>
+
+      <details id="visionBox" style="margin:6px 0 14px">
+        <summary style="cursor:pointer;color:#9ecbff">识图（看图说话）设置</summary>
+        <div style="padding:8px 0 0 14px">
+          <p class="hint" id="visionHint">主模型是纯文本时，可以另配一个视觉模型，把图片先转成文字再交给主模型。</p>
+          <label>识图模型名（留空 = 按服务商自动选择，纯文本服务商留空则不开识图）
+            <input type="text" id="captionModel" list="captionOptions" placeholder="点「获取可用模型」自动列出" autocomplete="off" />
+            <datalist id="captionOptions"></datalist>
+          </label>
+          <label>识图模型 API Base（留空 = 与主模型相同）
+            <input type="text" id="captionApiBase" placeholder="留空即可" />
+          </label>
+          <label>识图模型 API Key（留空 = 与主模型相同；主模型是 DeepSeek 时可填硅基流动的 Key）
+            <input type="text" id="captionApiKey" placeholder="留空即可" />
+          </label>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button id="testProvider">测试连接</button>
+        <button id="writeConfig" class="primary">写入配置并继续</button>
+        <button id="toPersona">下一步（需已写入配置）</button>
+      </div>
+      <div id="configMsg" class="msg"></div>
+    </section>
+
+    <!-- 4 人设 -->
+    <section class="panel" data-panel="4">
+      <h2>④ 大肥鱼人设</h2>
+      <p>下面是大肥鱼的系统人设，已为你准备好，<b>可以直接改</b>（换名字、调性格）。点「一键注入」会<b>自动写进 AstrBot 并设为默认人格</b>。</p>
+      <div class="actions">
+        <button id="injectPersona" class="primary">一键注入大肥鱼人设</button>
+        <button id="copyPersona">复制人设</button>
+        <button id="openPersona">打开仪表盘·人格设定页</button>
+      </div>
+      <details class="persona-fold" open>
+        <summary>展开/收起人设全文</summary>
+        <textarea id="personaText" rows="8" spellcheck="false"></textarea>
+      </details>
+      <div id="personaMsg" class="msg"></div>
+      <p class="hint">注入失败？可改用「打开仪表盘·人格设定页」手动新建人格（系统提示词粘贴上面的文本），并在对话框输入 <code>/persona dafeiyu</code> 切换。</p>
+      <div class="actions">
+        <button id="toConnect" class="primary">下一步：登录 QQ</button>
+      </div>
+    </section>
+
+    <!-- 5 登录QQ -->
+    <section class="panel" data-panel="5">
+      <h2>⑤ 登录 QQ（扫码登录小号）</h2>
+      <div class="risk-box">
+        ⚠️ <b>风险提示（必读）</b><br>
+        • 本工具通过 NapCat 接入<b>非官方 QQ 协议</b>，违反腾讯服务条款，<b>存在封号风险</b>。<br>
+        • 请务必使用<b>不重要、没啥好友的 QQ 小号</b>登录，<b>绝不要用你的主号</b>。<br>
+        • 建议小号只加你自己另一个号来测试，别拿去大规模加人/加群。<br>
+        • 由此产生的任何封号后果由使用者自行承担，作者不负责。<br>
+        • <b>NapCat 是第三方项目（Limited Redistribution License，禁止商业用途）</b>：它由你本机自行下载获取，
+        仅可用于个人学习研究；本工具不内置、也不代售 NapCat 的任何授权。
+      </div>
+      <p class="hint">本机没装 NapCat？点「一键装 NapCat」（会弹一次管理员授权）。装好后点「打开 NapCat」启动管理面板、用 <b>QQ 小号</b> 扫码登录。</p>
+      <ol class="notes">
+        <li>点「打开 NapCat」会打开其管理面板（需已安装并运行）。</li>
+        <li>在 NapCat 面板用 <b>QQ 小号</b> 扫码登录。</li>
+        <li>添加一条「WebSocket 客户端」，地址填 <code id="wsUrl">ws://127.0.0.1:16199/ws</code>，保存。</li>
+        <li>人设参考配置已生成在工具目录，可照抄（见下方）。</li>
+      </ol>
+      <details>
+        <summary>NapCat OneBot 参考配置（可照抄）</summary>
+        <pre id="napcatCfg">（点“生成参考配置”后显示）</pre>
+      </details>
+      <div class="creds-box">
+        <b>🔑 登录凭据（已自动获取，点一下即可复制）</b>
+        <div class="cred-row">
+          <span class="cred-label">AstrBot 用户名</span>
+          <code id="abUser">astrbot</code>
+          <button class="mini" data-copy="abUser">复制</button>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">AstrBot 密码</span>
+          <code id="abPwd">（启动 AstrBot 后自动获取）</code>
+          <button class="mini" data-copy="abPwd">复制</button>
+        </div>
+        <div class="cred-row">
+          <span class="cred-label">NapCat 密钥</span>
+          <code id="ncToken">（安装 NapCat 后自动读取）</code>
+          <button class="mini" data-copy="ncToken">复制</button>
+        </div>
+        <p class="hint">AstrBot 的初始密码是随机生成的、原本只藏在启动日志里；NapCat 的密钥也是自动生成的。这里都替你取出来了，点「自动登录」还能免密直接进。</p>
+        <div class="actions">
+          <button id="autoLoginAstrbot" class="primary">打开 AstrBot 面板（自动登录）</button>
+          <button id="autoLoginNapcat" class="primary">打开 NapCat（自动登录）</button>
+          <button id="refreshCreds">刷新凭据</button>
+        </div>
+        <div id="credMsg" class="msg"></div>
+      </div>
+      <div class="actions">
+        <button id="genNapcat">生成参考配置</button>
+        <button id="startNapcat">启动 NapCat（后台运行）</button>
+        <button id="openNapcat" class="primary">打开 NapCat 网页面板</button>
+        <button id="startBot">启动 AstrBot</button>
+      </div>
+      <p class="hint">
+        步骤：① 点「启动 NapCat」→ 它在<b>后台运行</b>（不会弹黑窗口，也不需要你保持任何窗口开着）；
+        ② 点「打开 NapCat（自动登录）」→ 自动带上 token 打开网页面板，用 <b>QQ 小号</b>扫码（二维码也存了一份在 <code>NapCat\cache\qrcode.png</code>）；
+        ③ 工具已自动写好「连回 AstrBot」的 WebSocket 客户端；若你手动新建，URL 填 <code>ws://127.0.0.1:16199/ws</code>。<br>
+        <b>所有服务都在后台跑</b>：关掉浏览器、关掉启动窗口都不影响机器人；想彻底停止请双击「停止服务.bat」。
+      </p>
+      <div class="actions">
+        <button id="finishDeploy" class="primary">启动 AstrBot 并完成部署 ❯</button>
+      </div>
+      <div id="qqMsg" class="msg"></div>
+    </section>
+
+    <!-- 6 完成 -->
+    <section class="panel" data-panel="6">
+      <h2>🎉 部署完成</h2>
+      <div id="finalHealth" class="status">正在检查服务状态…</div>
+      <p>用另一个 QQ 给小号发条消息试试，大肥鱼应该会回。收不到就看 AstrBot 仪表盘的「平台日志」。</p>
+      <div class="actions">
+        <button id="openDash" class="primary">打开 AstrBot 仪表盘</button>
+        <button id="recheckHealth">重新检测状态</button>
+      </div>
+      <p class="hint">常驻：AstrBot 在后台运行。想停就在任务管理器结束 <code>astrbot</code> / <code>uvx</code> 进程，或重启电脑。</p>
+      <div class="svc-box">
+        <b>关于窗口：这套东西全程不需要你保留任何黑窗口</b>
+        <ul>
+          <li>向导后端、AstrBot、NapCat <b>全部是后台进程</b>，日志各自写在 <code>wizard.log</code> / <code>astrbot.log</code> / <code>napcat.log</code>；</li>
+          <li>启动窗口启动后会自动最小化，<b>关掉它不影响机器人</b>；关掉浏览器也不影响；</li>
+          <li>需要重启时：双击「启动向导.bat」→ 第 ④ 步点「启动 AstrBot」→ 第 ⑤ 步点「启动 NapCat」（已在跑会自动跳过）；</li>
+          <li>想彻底全部停止：双击文件夹里的 <b>「停止服务.bat」</b>（聊天数据不会丢）；</li>
+          <li>电脑重启后需要重新双击「启动向导.bat」——这是唯一需要你记的事。</li>
+        </ul>
+      </div>
+
+      <!-- 高级工具：全部免费，帮你省事的附加能力 -->
+      <div class="pro-box">
+        <div class="pro-head">
+          <b>🧰 高级工具</b>
+          <span id="proState" class="pro-state">全部免费</span>
+        </div>
+        <ul class="notes" id="proFeatureList"></ul>
+        <div class="actions">
+          <button id="proBackup">一键备份</button>
+          <button id="proPersonas">人设管理</button>
+          <button id="proAdvance">高级参数</button>
+        </div>
+        <div id="proMsg" class="msg"></div>
+        <p class="hint">备份包含 AstrBot 配置与人设；<b>不包含 NapCat 登录态和任何密钥</b>（那是你的 QQ 凭证，不打包）。</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- 自定义确认框：比浏览器 confirm 更好看，也能把"推荐动作"放在主按钮上 -->
+  <div id="modalMask" class="modal-mask" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button id="modalClose" class="modal-close" aria-label="关闭">×</button>
+      <div id="modalIcon" class="modal-icon">⚠️</div>
+      <h3 id="modalTitle">提示</h3>
+      <p id="modalBody"></p>
+      <div class="modal-actions">
+        <button id="modalSkip" class="ghost">仍然跳过</button>
+        <button id="modalBack" class="primary">返回安装</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关于 / 开源与许可（AGPL 合规入口：断网也要看得到，不能只有链接） -->
+  <div id="aboutMask" class="modal-mask" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-icon">📖</div>
+      <h3>关于 · 开源与许可</h3>
+      <div class="about-body">
+        <p><b>本工具</b>：大肥鱼 QQ AI 一键部署向导，完全免费、MIT 许可开源。<br>
+        它只是帮你「安装、配置、启动」下面的开源项目，<b>不售卖也不代理任何第三方软件的授权</b>。</p>
+
+        <p><b>AstrBot</b>（聊天机器人核心：人设 / 记忆 / 调模型）<br>
+        许可：<b>AGPL-3.0-or-later</b> · <a href="https://github.com/AstrBotDevs/AstrBot" target="_blank" rel="noopener">github.com/AstrBotDevs/AstrBot</a><br>
+        本工具对它的修改已完整公开，见随包 <code>patches/</code> 目录（含可独立运行的补丁脚本）。</p>
+
+        <p><b>NapCat</b>（QQ 协议接入）<br>
+        许可：<b>Limited Redistribution License</b>（禁止商业用途、限制再分发）<br>
+        <b>由你本机自行下载获取</b>，仅限个人非商业学习使用；本工具不内置、不分发它。</p>
+
+        <p><b>源码</b>：<span id="aboutRepo">（随包 README 与 LICENSE_NOTICE.md 中查看）</span></p>
+
+        <p class="about-warn">⚠️ QQ 通道为<b>非官方协议</b>，违反腾讯服务条款，存在封号风险。<br>
+        请务必使用不重要的 <b>QQ 小号</b>，不要用主号，后果由使用者自行承担。</p>
+
+        <p class="about-privacy">隐私：本工具<b>不上传</b>你的 QQ 号、聊天记录、API Key、任何文件内容。</p>
+      </div>
+      <div class="modal-actions">
+        <button id="aboutOk" class="primary">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

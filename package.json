@@ -1,0 +1,10 @@
+{
+  "name": "dafeiyu-qq-tool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "大肥鱼 QQ AI 一键部署工具（基于 AstrBot + NapCat，免费、MIT 外壳）",
+  "scripts": {
+    "start": "node backend/server.js",
+    "wizard": "node backend/server.js"
+  }
+}
