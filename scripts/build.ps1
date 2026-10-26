@@ -74,6 +74,18 @@ if (-not $hasNode) {
   Write-Host '[WARN] no payload\node.exe: this build expects the user to have Node.js installed' -ForegroundColor Yellow
 }
 
+# Never ship local build tools (Inno compiler, extractors, downloaded installers).
+$devDirs = @('InnoSetup6', 'innoextract2')
+foreach ($d in $devDirs) {
+  $p = Join-Path $stage "tools\$d"
+  if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Recurse -Force }
+}
+$devFiles = @('7zr.exe', 'innoextract.zip', 'innosetup-6.0.5.exe', 'innosetup-6.7.3.exe')
+foreach ($f in $devFiles) {
+  $p = Join-Path $stage "tools\$f"
+  if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Force }
+}
+
 # Remove runtime artifacts that must never ship.
 $drop = @('wizard.log', 'wizard.err.log', 'wizard.lock', 'wizard.port', 'nul')
 foreach ($d in $drop) {
@@ -118,37 +130,50 @@ if ($SkipSmoke) {
 if ($LASTEXITCODE -ne 0) { throw 'verify.ps1 failed; release aborted' }
 
 # Package.
-$iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
-if (-not $SkipInstaller -and $iscc) {
-  Write-Host '== compiling Inno Setup installer =='
-  & $iscc.Source "/DMyAppVersion=$Version" "/O$OutDir" (Join-Path $root 'installer\dafeiyu.iss')
-  if ($LASTEXITCODE -ne 0) { throw 'iscc failed' }
-} else {
-  if (-not $SkipInstaller) {
-    Write-Host '[WARN] iscc.exe not found; falling back to portable zip' -ForegroundColor Yellow
+$isccPath = ''
+$isccCmd = Get-Command iscc.exe -ErrorAction SilentlyContinue
+if ($isccCmd) { $isccPath = $isccCmd.Source }
+if (-not $isccPath) {
+  $isccCandidates = @(
+    (Join-Path $root 'tools\InnoSetup6\app\ISCC.exe'),
+    (Join-Path $root 'tools\InnoSetup6\ISCC.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+  )
+  foreach ($c in $isccCandidates) {
+    if (Test-Path -LiteralPath $c) { $isccPath = $c; break }
   }
-  Write-Host '== creating portable zip =='
-  Add-Type -AssemblyName System.IO.Compression
-  Add-Type -AssemblyName System.IO.Compression.FileSystem
-  $zip = Join-Path $OutDir "DaFeiYu-Portable-$Version.zip"
-  if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
-  $zipStream = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
-  try {
-    $archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create, $false, [System.Text.Encoding]::UTF8)
-    try {
-      $filesToZip = @(Get-ChildItem -LiteralPath $stage -Recurse -File -Force | Sort-Object FullName)
-      foreach ($f in $filesToZip) {
-        # Zip entry names MUST use forward slashes (P54); CreateFromDirectory on
-        # Windows PowerShell writes backslashes, which breaks non-Windows unzip.
-        $rel = $f.FullName.Substring($stage.Length + 1).Replace('\', '/')
-        $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
-        $es = $entry.Open()
-        $fs = [System.IO.File]::OpenRead($f.FullName)
-        try { $fs.CopyTo($es) } finally { $fs.Dispose(); $es.Dispose() }
-      }
-    } finally { $archive.Dispose() }
-  } finally { $zipStream.Dispose() }
 }
+if (-not $SkipInstaller) {
+  if ($isccPath) {
+    Write-Host "== compiling Inno Setup installer ($isccPath) =="
+    & $isccPath "/DMyAppVersion=$Version" "/O$OutDir" (Join-Path $root 'installer\dafeiyu.iss')
+    if ($LASTEXITCODE -ne 0) { throw 'iscc failed' }
+  } else {
+    Write-Host '[WARN] iscc.exe not found; only portable zip will be produced' -ForegroundColor Yellow
+  }
+}
+
+Write-Host '== creating portable zip =='
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = Join-Path $OutDir "DaFeiYu-Portable-$Version.zip"
+if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+$zipStream = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
+try {
+  $archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create, $false, [System.Text.Encoding]::UTF8)
+  try {
+    $filesToZip = @(Get-ChildItem -LiteralPath $stage -Recurse -File -Force | Sort-Object FullName)
+    foreach ($f in $filesToZip) {
+      # Zip entry names MUST use forward slashes (P54); CreateFromDirectory on
+      # Windows PowerShell writes backslashes, which breaks non-Windows unzip.
+      $rel = $f.FullName.Substring($stage.Length + 1).Replace('\', '/')
+      $entry = $archive.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+      $es = $entry.Open()
+      $fs = [System.IO.File]::OpenRead($f.FullName)
+      try { $fs.CopyTo($es) } finally { $fs.Dispose(); $es.Dispose() }
+    }
+  } finally { $archive.Dispose() }
+} finally { $zipStream.Dispose() }
 
 Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $OutDir "DaFeiYu-$Version.manifest.json") -Force
 

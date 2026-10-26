@@ -9,6 +9,13 @@
 /tools/python/
 /vendor/NapCat.Shell.zip
 
+# local build tools (downloaded/extracted, not shipped)
+/tools/InnoSetup6/
+/tools/innoextract2/
+/tools/innoextract.zip
+/tools/innosetup-*.exe
+/tools/7zr.exe
+
 # runtime state
 wizard.log
 wizard.err.log

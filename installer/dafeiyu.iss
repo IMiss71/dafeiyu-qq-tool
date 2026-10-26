@@ -1,4 +1,4 @@
-; DaFeiYu deployer - Inno Setup 6 script
+﻿; DaFeiYu deployer - Inno Setup 6 script
 ; Build: iscc /DMyAppVersion=2.2.0 /O..\dist installer\dafeiyu.iss
 ;
 ; Zero-cash build: unsigned. Windows will show SmartScreen once on first run.
@@ -27,7 +27,7 @@ OutputBaseFilename=DaFeiYu-Setup-{#MyAppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesAllowed=x64compatible
+ArchitecturesAllowed=x64
 MinVersion=10.0.19042
 CloseApplications=no
 RestartApplications=no
