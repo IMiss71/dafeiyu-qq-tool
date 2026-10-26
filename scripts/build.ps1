@@ -35,6 +35,11 @@ Write-Host "stage: $stage"
 if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+# Keep checksums honest: drop previous versioned artifacts, keep unrelated files.
+Get-ChildItem -LiteralPath $OutDir -File -Filter 'DaFeiYu-*' -ErrorAction SilentlyContinue |
+  Remove-Item -Force -ErrorAction SilentlyContinue
+$oldSum = Join-Path $OutDir 'SHA256SUMS.txt'
+if (Test-Path -LiteralPath $oldSum) { Remove-Item -LiteralPath $oldSum -Force }
 
 # Copy all top-level source directories except build-only ones.
 $excludeDirs = @('build', 'dist', 'out', 'payload', '.git', '.github', 'node_modules', 'tests', 'installer')

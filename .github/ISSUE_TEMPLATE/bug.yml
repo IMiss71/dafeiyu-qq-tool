@@ -13,7 +13,7 @@ body:
     attributes:
       label: 版本
       description: 向导“关于”页或安装包文件名里的版本
-      placeholder: "2.2.0"
+      placeholder: "2.2.1"
     validations:
       required: true
   - type: dropdown

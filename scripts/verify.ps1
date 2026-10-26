@@ -174,7 +174,7 @@ if (-not $SkipSmoke) {
     Fail 'node not found; cannot run smoke test'
   } else {
     $port = Get-Random -Minimum 21000 -Maximum 39000
-    $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('dfy-verify-' + [guid]::NewGuid().ToString('N'))
+    $tmp = Join-Path $root ('build\verify-tmp-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Force -Path $tmp | Out-Null
     $keys = @('DAFEIYU_WIZARD_PORT', 'DAFEIYU_PROXY_PORT', 'DAFEIYU_DASHBOARD_PORT', 'DAFEIYU_NAPCAT_PORT', 'DAFEIYU_WORK_DIR')
     $oldEnv = @{}

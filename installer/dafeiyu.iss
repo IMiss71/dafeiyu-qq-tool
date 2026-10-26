@@ -1,11 +1,11 @@
 ﻿; DaFeiYu deployer - Inno Setup 6 script
-; Build: iscc /DMyAppVersion=2.2.0 /O..\dist installer\dafeiyu.iss
+; Build: iscc /DMyAppVersion=2.2.1 /O..\dist installer\dafeiyu.iss
 ;
 ; Zero-cash build: unsigned. Windows will show SmartScreen once on first run.
 ; Per-user install (no UAC), one progress page, no welcome/finish pages.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.2.0"
+  #define MyAppVersion "2.2.1"
 #endif
 
 [Setup]
@@ -40,6 +40,7 @@ VersionInfoDescription=大肥鱼 QQ 部署向导安装程序
 
 [Files]
 Source: "..\build\stage\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\build\stage\tools\stop-all-wizards.ps1"; DestDir: "{tmp}"; Flags: dontcopy
 
 [Icons]
 Name: "{group}\大肥鱼部署向导"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Comment: "打开大肥鱼部署向导"
@@ -63,6 +64,13 @@ function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
 begin
+  (* Stop ANY old DaFeiYu wizard (18765-18775), not just the one in the app dir.
+     This prevents an old 2.1.x wizard from keeping port 18765 and fighting the new one. *)
+  ExtractTemporaryFile('stop-all-wizards.ps1');
+  Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + ExpandConstant('{tmp}\stop-all-wizards.ps1') + '"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
   { Stop the running instance silently; no "please close the app" dialog. }
   if FileExists(ExpandConstant('{app}\launcher\stop-hidden.vbs')) then
     Exec(ExpandConstant('{sys}\wscript.exe'),

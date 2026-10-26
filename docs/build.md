@@ -19,9 +19,9 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -SkipSmoke
 产物：
 
 ```text
-dist\DaFeiYu-Portable-2.2.0.zip        # 没有 iscc 时
-dist\DaFeiYu-Setup-2.2.0.exe           # 有 iscc 时
-dist\DaFeiYu-2.2.0.manifest.json
+dist\DaFeiYu-Portable-2.2.1.zip        # 没有 iscc 时
+dist\DaFeiYu-Setup-2.2.1.exe           # 有 iscc 时
+dist\DaFeiYu-2.2.1.manifest.json
 dist\SHA256SUMS.txt
 ```
 

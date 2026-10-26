@@ -58,3 +58,23 @@ backend/plugins/{install,manifest,rollback}.js
 ```
 
 每个 step 实现 `{ id, title, run, verify, rollback, timeoutMs }`，安装状态写入 `state.json`，支持恢复/取消/回滚。
+
+## 3.0 基础模块（已落地，未接线）
+
+| 文件 | 作用 |
+|---|---|
+| `backend/core/errors.js` | 统一错误码 / 用户话术 / remediation / retryable |
+| `backend/core/state.js` | 安装状态持久化、原子写、损坏备份、步骤状态/恢复 |
+| `backend/core/steps.js` | 步骤契约、顺序执行、超时、取消、失败回滚 |
+| `backend/core/manifest.js` | 插件包 manifest 校验：semver、路径穿越、SHA256 |
+
+这些模块目前**没有被 `deploy.js` 调用**，先以单测锁定契约；下一阶段再把 `preflight`、`install_napcat` 等步骤逐个迁进去。
+
+## 升级清理（2.2.1）
+
+安装器 `PrepareToInstall` 会先提取并执行 `tools/stop-all-wizards.ps1`：
+
+- 找 `node.exe` 且命令行含 `backend\server.js` 的进程；
+- 失败时回退到 18765–18775 端口上的 `node.exe`；
+- 只停向导，不动 AstrBot / NapCat，避免旧 2.1.x 占端口、两个向导抢服务。
+

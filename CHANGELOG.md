@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.2.1 - 2026-10-26
+
+升级清理版：解决“新版本退到 18766、旧 2.1.x 还占 18765”的问题。
+
+### 安装 / 升级
+
+- 安装前自动停掉 18765–18775 上所有 DaFeiYu 向导（`node.exe backend\server.js`），不再只停 `{app}` 里的那个。
+- 新增 `tools/stop-all-wizards.ps1`；Inno `PrepareToInstall` 先执行它，再停旧服务。
+- 这样旧 2.1.x 不会继续占 18765，也不会和新 2.2.x 同时自愈同一套 AstrBot/NapCat。
+
+### 3.0 基础模块（未接线，先带单测）
+
+- `backend/core/errors.js`：统一 `AppError`（code / userMessage / detail / remediation / retryable）。
+- `backend/core/state.js`：安装状态持久化、原子写、损坏备份、步骤状态/恢复。
+- `backend/core/steps.js`：步骤定义、顺序执行、超时、取消、失败回滚。
+- `backend/core/manifest.js`：插件包 manifest 校验（semver、路径穿越、SHA256）。
+- `tests/core.test.js` + `tests/run.js`；`npm test` 改为单进程，避免受限环境 spawn 失败。
+
 ## 2.2.0 - 2026-10-26
 
 止血版：先让包不可能被装错，再谈重构；现金成本 0。

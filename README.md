@@ -165,8 +165,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 
 ## 路线图
 
-- **2.2.0（当前）**：止血。P0 修复、随机密码/token、回环绑定、Inno 安装器、VBS 无窗口、manifest/verify、四包重打。
+- **2.2.1（当前）**：止血 + 升级清理。安装前停掉 18765–18775 上所有旧向导，避免旧 2.1.x 占端口、两个向导抢服务。
 - **3.0.0**：后端拆 `steps/` + 状态机 + 错误模型；插件管理器；Doctor 面板；更新/回滚；完整文档与 CI。
+  - 已落地基础模块：`backend/core/errors.js`、`state.js`、`steps.js`、`manifest.js`（含单测）。
 - 付费插件线独立：本仓库只提供通用插件包管理，不包含插件源码。
 
 ---
