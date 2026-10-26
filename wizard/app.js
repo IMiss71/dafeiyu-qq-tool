@@ -1667,6 +1667,8 @@ async function bootstrap() {
         checkEnv(); // 后端在线：正常流程（自动检测环境、跳过已装项）
         loadPresets(); // 用后端的服务商预设覆盖（保证模型名/地址不过时）
         refreshLicense(); // 顺带读一下授权状态（免费版也显示，不影响使用）
+        loadPlugins(); // 插件管理列表
+        loadDoctor(); // Doctor 诊断
         return;
       }
     } catch {
@@ -1680,3 +1682,161 @@ async function bootstrap() {
   }
 }
 bootstrap();
+
+// ---------- 插件管理（完成页）----------
+let pluginPicked = null;
+
+function pluginMsg(text, cls = '') {
+  const el = $('#pluginMsg');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'msg ' + cls;
+}
+
+function pluginSize(n) {
+  if (!n) return '0 B';
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function pluginRow(text, buttonText, onClick) {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb';
+  const label = document.createElement('span');
+  label.textContent = text;
+  label.style.cssText = 'font-size:13px;line-height:1.5;word-break:break-all';
+  row.appendChild(label);
+  if (buttonText && onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ghost tiny';
+    btn.textContent = buttonText;
+    btn.addEventListener('click', onClick);
+    row.appendChild(btn);
+  }
+  return row;
+}
+
+async function loadPlugins() {
+  const box = $('#pluginList');
+  if (!box) return;
+  try {
+    const r = await api('/api/plugins');
+    if (!r || !r.ok) throw new Error((r && r.error) || '读取插件列表失败');
+    box.textContent = '';
+    const installed = r.plugins || [];
+    const backups = r.backups || [];
+    const head = document.createElement('div');
+    head.className = 'hint';
+    head.textContent = installed.length ? `已安装 ${installed.length} 个插件` : '还没有安装插件';
+    box.appendChild(head);
+
+    for (const p of installed) {
+      const ver = p.version || p.metadataVersion || '?';
+      const warn = !p.manifestVersion ? ' · 无 manifest（旧包）' : '';
+      box.appendChild(pluginRow(`${p.name}  v${ver}  ·  ${pluginSize(p.size)}${warn}`));
+    }
+
+    if (backups.length) {
+      const bh = document.createElement('div');
+      bh.className = 'hint';
+      bh.style.marginTop = '10px';
+      bh.textContent = `可回滚备份（${backups.length}）`;
+      box.appendChild(bh);
+      for (const b of backups.slice(0, 8)) {
+        const date = b.createdAt ? new Date(b.createdAt).toLocaleString() : '';
+        box.appendChild(pluginRow(`${b.name}  v${b.version || '?'}  ·  ${date}`, '回滚', async () => {
+          try {
+            pluginMsg('正在回滚…');
+            const rr = await api('/api/plugins/rollback', 'POST', { backupId: b.id });
+            if (!rr || !rr.ok) throw new Error((rr && rr.error) || '回滚失败');
+            pluginMsg('已回滚；重启 AstrBot 后生效', 'ok');
+            await loadPlugins();
+          } catch (e) {
+            pluginMsg('回滚失败：' + e.message, 'err');
+          }
+        }));
+      }
+    }
+  } catch (e) {
+    pluginMsg('读取插件列表失败：' + e.message, 'err');
+  }
+}
+
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+if ($('#pluginPick')) {
+  $('#pluginPick').addEventListener('click', () => $('#pluginFile').click());
+  $('#pluginFile').addEventListener('change', () => {
+    pluginPicked = ($('#pluginFile').files || [])[0] || null;
+    pluginMsg(pluginPicked ? `已选择：${pluginPicked.name}（${pluginSize(pluginPicked.size)}）` : '');
+  });
+  $('#pluginInstall').addEventListener('click', async () => {
+    if (!pluginPicked) { pluginMsg('先点「选择插件包」选一个 zip', 'err'); return; }
+    if (pluginPicked.size > 15 * 1024 * 1024) { pluginMsg('插件包超过 15MB，暂不支持', 'err'); return; }
+    const btn = $('#pluginInstall');
+    btn.disabled = true;
+    try {
+      pluginMsg('正在读取并校验插件包…');
+      const buf = await pluginPicked.arrayBuffer();
+      const r = await api('/api/plugins/install', 'POST', {
+        filename: pluginPicked.name,
+        zipBase64: arrayBufferToBase64(buf),
+      });
+      if (!r || !r.ok) throw new Error((r && (r.error || r.remediation)) || '安装失败');
+      pluginMsg(`已安装 ${r.name} v${r.version}；重启 AstrBot 后生效`, 'ok');
+      pluginPicked = null;
+      $('#pluginFile').value = '';
+      await loadPlugins();
+    } catch (e) {
+      pluginMsg('安装失败：' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+// ---------- Doctor 诊断（完成页）----------
+async function loadDoctor() {
+  const box = $('#doctorStatus');
+  if (!box) return;
+  box.textContent = '检查中…';
+  try {
+    const r = await api('/api/doctor/status');
+    if (!r || !r.ok) throw new Error((r && r.error) || '诊断失败');
+    box.textContent = '';
+    const brand = $('#brandVer');
+    if (brand && r.version) brand.textContent = 'v' + r.version;
+    const ports = Object.entries(r.ports || {}).map(([k, v]) => {
+      const state = v.free === true ? '空闲' : v.free === false ? '占用' : '未知';
+      return `${k} ${v.port} ${state}`;
+    }).join('  ·  ');
+    const rows = [
+      ['版本', `${r.version}  ·  Node ${r.node}`],
+      ['安装状态', (r.installState && r.installState.status) || 'unknown'],
+      ['插件', `${((r.plugins && r.plugins.plugins) || []).length} 个 / ${((r.plugins && r.plugins.backups) || []).length} 个备份`],
+      ['端口', ports],
+      ['日志', (r.logs || []).map((l) => `${l.name} ${pluginSize(l.size)}`).join('  ·  ')],
+      ['数据目录', r.workDir],
+    ];
+    for (const [k, v] of rows) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:3px 0;border-bottom:1px solid #eef1f5;font-size:13px;word-break:break-all';
+      row.textContent = `${k}：${v}`;
+      box.appendChild(row);
+    }
+  } catch (e) {
+    box.textContent = '诊断失败：' + e.message;
+  }
+}
+
+if ($('#doctorRefresh')) $('#doctorRefresh').addEventListener('click', loadDoctor);

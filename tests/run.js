@@ -3,3 +3,4 @@
 require('./static.test.js');
 require('./core.test.js');
 require('./plan.test.js');
+require('./plugin.test.js');

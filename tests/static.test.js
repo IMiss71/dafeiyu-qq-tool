@@ -56,7 +56,7 @@ test('installer is per-user and has no extra wizard pages', () => {
 
 test('version and manifest template agree', () => {
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.version, '2.2.1');
+  assert.equal(pkg.version, '2.3.0');
   const m = JSON.parse(read('manifest.template.json'));
   assert.equal(m.product, 'dafeiyu-qq-deployer');
   assert.equal(m.schema_version, 1);

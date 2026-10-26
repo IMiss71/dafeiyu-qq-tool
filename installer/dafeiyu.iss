@@ -1,11 +1,11 @@
 ﻿; DaFeiYu deployer - Inno Setup 6 script
-; Build: iscc /DMyAppVersion=2.2.1 /O..\dist installer\dafeiyu.iss
+; Build: iscc /DMyAppVersion=2.3.0 /O..\dist installer\dafeiyu.iss
 ;
 ; Zero-cash build: unsigned. Windows will show SmartScreen once on first run.
 ; Per-user install (no UAC), one progress page, no welcome/finish pages.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.2.1"
+  #define MyAppVersion "2.3.0"
 #endif
 
 [Setup]

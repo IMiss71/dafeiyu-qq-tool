@@ -1,12 +1,32 @@
 # Changelog
 
-## Unreleased（3.0 groundwork）
+## 2.3.0 - 2026-10-26
+
+插件管理 + Doctor + 服务端一键安装计划。
+
+### 安装流程
 
 - `deploy.runStep(name, fn, id)` 写入 `install-state.json`；新增 `GET /api/install-state`。
-- 新增 `backend/steps/install-plan.js`：唯一安装计划（preflight → uv → AstrBot → init → NapCat → plugin）与 `planMeta()`。
-- 新增 `GET /api/install-plan` 与 `POST /api/install-all`；前端“一键安装全部”已改为走后端计划。
+- 新增 `backend/steps/install-plan.js`：唯一安装计划（preflight → uv → AstrBot → init → NapCat → plugin）。
+- 新增 `GET /api/install-plan` 与 `POST /api/install-all`；前端“一键安装全部”改为走后端计划。
 - `planBusy` 与单步 `runStep` 互斥；单步按钮保留。
-- 单测 19 项通过。
+
+### 插件管理器
+
+- `backend/plugins/zip.js`：零依赖、路径安全的 zip 解压（拒绝 `..`、绝对路径、ZIP64/加密）。
+- `backend/plugins/manager.js`：manifest 校验、SHA256 校验、备份到 `data/plugin_backups`、保留 `data/`/`meme_packs`、回滚、删除。
+- API：`GET /api/plugins`、`POST /api/plugins/install|rollback|remove`。
+- 前端完成页新增“插件管理”卡片：选 zip、安装/升级、备份列表、回滚。
+
+### Doctor
+
+- `GET /api/doctor/status`：版本、安装状态、端口、插件、日志大小、数据目录。
+- 完成页新增 Doctor 卡片，可刷新查看。
+
+### 其他
+
+- 单测 21 项通过；`verify.ps1` 冒烟覆盖 install-state/install-plan/plugins/doctor。
+- 版本 2.3.0。
 
 ## 2.2.1 - 2026-10-26
 

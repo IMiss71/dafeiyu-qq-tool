@@ -8,6 +8,8 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const d = require('./deploy');
+const { createPluginManager } = require('./plugins/manager');
+const pluginManager = createPluginManager(d.WORK_DIR);
 const lic = require('./license');
 const pro = require('./pro_features');
 const pf = require('./preflight');
@@ -38,6 +40,17 @@ function sendJson(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
+function pluginFail(res, e) {
+  const status = e && e.code === 'E_PLUGIN_NOT_FOUND' ? 404 : 400;
+  return sendJson(res, status, {
+    ok: false,
+    code: (e && e.code) || 'E_PLUGIN',
+    error: (e && (e.userMessage || e.message)) || '插件操作失败',
+    remediation: (e && e.remediation) || '',
+    detail: (e && e.detail) || '',
+  });
+}
+
 // ---------- 进度推送（SSE）----------
 // 下载/装包都在 deploy.js 里跑，通过 sink 把进度送到这里再广播给所有开着向导的页面。
 const sseClients = new Set();
@@ -54,15 +67,15 @@ d.setProgressSink((evt) => {
   }
 });
 
-function readBody(req) {
+function readBody(req, maxBytes = 5 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let data = '';
     let size = 0;
     req.on('data', (c) => {
       size += c.length;
-      if (size > 5 * 1024 * 1024) {
+      if (size > maxBytes) {
         try { req.destroy(); } catch (_) {}
-        reject(new Error('请求体超过 5MB，已拒绝'));
+        reject(new Error(`请求体超过 ${Math.round(maxBytes / 1024 / 1024)}MB，已拒绝`));
         return;
       }
       data += c;
@@ -171,6 +184,54 @@ async function handleApi(req, res, urlPath) {
     }
     if (req.method === 'GET' && urlPath === '/api/install-plan') {
       return sendJson(res, 200, { ok: true, steps: planMeta() });
+    }
+    if (req.method === 'GET' && urlPath === '/api/doctor/status') {
+      try {
+        const [status, pre] = await Promise.all([
+          d.status().catch((e) => ({ error: e.message })),
+          pf.run().catch((e) => ({ error: e.message })),
+        ]);
+        const wizardPort = (() => {
+          try {
+            const n = parseInt(fs.readFileSync(path.join(__dirname, '..', 'wizard.port'), 'utf8').trim(), 10);
+            return Number.isFinite(n) && n > 0 ? n : PORT;
+          } catch (_) { return PORT; }
+        })();
+        const ports = {};
+        for (const [name, port] of Object.entries({
+          wizard: wizardPort,
+          astrbot: d.DASHBOARD_PORT,
+          napcat: d.NAPCAT_WEBUI_PORT,
+          onebot: 16199,
+        })) {
+          const r = await pf.probePort(port).catch(() => ({ free: null }));
+          ports[name] = Object.assign({ port }, r);
+        }
+        const logs = [
+          ['wizard', path.join(__dirname, '..', 'wizard.log')],
+          ['astrbot', path.join(d.WORK_DIR, 'astrbot.log')],
+          ['napcat', path.join(d.WORK_DIR, 'napcat.log')],
+        ].map(([name, file]) => {
+          let size = 0;
+          try { size = fs.statSync(file).size; } catch (_) {}
+          return { name, path: file, size };
+        });
+        return sendJson(res, 200, {
+          ok: true,
+          version: (() => { try { return require('../package.json').version; } catch (_) { return 'unknown'; } })(),
+          node: process.version,
+          platform: process.platform,
+          workDir: d.WORK_DIR,
+          installState: d.getInstallState(),
+          status,
+          preflight: pre && pre.summary ? pre.summary : { error: pre && pre.error },
+          plugins: pluginManager.list(),
+          ports,
+          logs,
+        });
+      } catch (e) {
+        return sendJson(res, 500, { ok: false, error: e.message });
+      }
     }
     if (req.method === 'POST' && urlPath === '/api/kill-port') {
       // 一键释放被占用的端口（白名单内才杀，绝不误伤系统进程）
@@ -379,6 +440,50 @@ async function handleApi(req, res, urlPath) {
         });
       } finally {
         planBusy = false;
+      }
+    }
+    if (req.method === 'GET' && urlPath === '/api/plugins') {
+      try {
+        return sendJson(res, 200, Object.assign({ ok: true }, pluginManager.list()));
+      } catch (e) {
+        return pluginFail(res, e);
+      }
+    }
+    if (req.method === 'POST' && urlPath === '/api/plugins/install') {
+      let zipPath = '';
+      try {
+        const body = await readBody(req, 24 * 1024 * 1024);
+        const b64 = String(body.zipBase64 || '').trim();
+        if (!b64) return pluginFail(res, new Error('缺少 zipBase64'));
+        if (b64.length > 20 * 1024 * 1024) return pluginFail(res, new Error('插件包超过 15MB'));
+        const tmpDir = path.join(d.WORK_DIR, 'plugin_tmp');
+        fs.mkdirSync(tmpDir, { recursive: true });
+        zipPath = path.join(tmpDir, `upload-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.zip`);
+        fs.writeFileSync(zipPath, Buffer.from(b64, 'base64'));
+        const r = pluginManager.installFromZip(zipPath, { expectedName: body.name || '' });
+        return sendJson(res, 200, r);
+      } catch (e) {
+        return pluginFail(res, e);
+      } finally {
+        if (zipPath) { try { fs.unlinkSync(zipPath); } catch (_) {} }
+      }
+    }
+    if (req.method === 'POST' && urlPath === '/api/plugins/rollback') {
+      try {
+        const body = await readBody(req);
+        const r = pluginManager.rollback(body.backupId);
+        return sendJson(res, 200, r);
+      } catch (e) {
+        return pluginFail(res, e);
+      }
+    }
+    if (req.method === 'POST' && urlPath === '/api/plugins/remove') {
+      try {
+        const body = await readBody(req);
+        const r = pluginManager.remove(body.name);
+        return sendJson(res, 200, r);
+      } catch (e) {
+        return pluginFail(res, e);
       }
     }
     if (req.method === 'POST' && urlPath === '/api/install-uv') {

@@ -85,3 +85,30 @@ backend/plugins/{install,manifest,rollback}.js
 - 失败时回退到 18765–18775 端口上的 `node.exe`；
 - 只停向导，不动 AstrBot / NapCat，避免旧 2.1.x 占端口、两个向导抢服务。
 
+## 插件管理器（2.3.0）
+
+```text
+GET  /api/plugins                 列表 + 备份
+POST /api/plugins/install         { filename, zipBase64 }  // 包内必须有 manifest.json
+POST /api/plugins/rollback        { backupId }
+POST /api/plugins/remove          { name }
+```
+
+- `backend/plugins/zip.js`：零依赖解析 ZIP（store/deflate），拒绝 `..`、绝对路径、加密、ZIP64；解压大小/条目数上限。
+- `backend/plugins/manager.js`：manifest 校验 → 文件 SHA256 校验 → 备份现有版本到 `data/plugin_backups` → 替换代码 → 从备份回填 `data/`/`meme_packs`/`voice`/`tmp`。
+- 回滚：先把当前版本备份为 `*-pre-rollback-*`，再把选定备份复制回去。
+- 完成后提示重启 AstrBot；不主动停服务，避免装插件时把机器人搞下线。
+
+## Doctor（2.3.0）
+
+`GET /api/doctor/status` 汇总：
+
+- 工具版本 / Node / 数据目录
+- `install-state.json` 状态
+- 向导 / AstrBot / NapCat / OneBot 端口是否空闲
+- 插件与备份数量
+- `wizard.log` / `astrbot.log` / `napcat.log` 大小
+
+前端完成页有 Doctor 卡片；“生成诊断报告”仍走 `/api/diag`（自动打码）。
+
+

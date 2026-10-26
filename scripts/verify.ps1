@@ -238,6 +238,20 @@ if (-not $SkipSmoke) {
           } catch {
             Fail "smoke: /api/install-plan failed: $($_.Exception.Message)"
           }
+          try {
+            $r5 = Invoke-WebRequest -Uri "$base/api/plugins" -UseBasicParsing -Headers @{ 'X-DaFeiYu-Wizard' = $tokenMatch.Groups[1].Value } -TimeoutSec 5
+            $j5 = $r5.Content | ConvertFrom-Json
+            if ($r5.StatusCode -ne 200 -or -not $j5.ok -or $null -eq $j5.plugins) { Fail "smoke: /api/plugins invalid" }
+          } catch {
+            Fail "smoke: /api/plugins failed: $($_.Exception.Message)"
+          }
+          try {
+            $r6 = Invoke-WebRequest -Uri "$base/api/doctor/status" -UseBasicParsing -Headers @{ 'X-DaFeiYu-Wizard' = $tokenMatch.Groups[1].Value } -TimeoutSec 15
+            $j6 = $r6.Content | ConvertFrom-Json
+            if ($r6.StatusCode -ne 200 -or -not $j6.ok -or -not $j6.ports) { Fail "smoke: /api/doctor/status invalid" }
+          } catch {
+            Fail "smoke: /api/doctor/status failed: $($_.Exception.Message)"
+          }
         }
         if ($script:fail -eq 0) { Ok "smoke: server up, token injected, API gated" }
       }

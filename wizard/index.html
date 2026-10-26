@@ -48,7 +48,7 @@
           </svg>
         </span>
         <div>
-          <h1>大肥鱼 <span class="brand-tag">QQ AI</span><span class="brand-free">免费开源</span><span class="brand-ver">v2.1.1</span></h1>
+          <h1>大肥鱼 <span class="brand-tag">QQ AI</span><span class="brand-free">免费开源</span><span class="brand-ver" id="brandVer">v2.3.0</span></h1>
           <p class="sub">填好 Key，扫码登录小号，就能在 QQ 上和大肥鱼聊天</p>
         </div>
         <button id="aboutBtn" class="ghost tiny" style="margin-left:auto" title="开源许可与合规声明">关于</button>
@@ -411,6 +411,27 @@
           <li>想彻底全部停止：开始菜单「停止大肥鱼」，或 <code>launcher\stop-hidden.vbs</code>（聊天数据不会丢）；</li>
           <li>电脑重启后需要重新打开「大肥鱼部署向导」——这是唯一需要你记的事。</li>
         </ul>
+      </div>
+
+      <div class="svc-box" id="pluginBox">
+        <b>插件管理（付费插件包）</b>
+        <p class="hint" style="margin:6px 0">选择插件 zip（包内需有 <code>manifest.json</code>）→ 安装/升级。旧版本自动备份，可回滚；不会动你的 <code>data/</code>。</p>
+        <div class="actions" style="justify-content:flex-start">
+          <input type="file" id="pluginFile" accept=".zip,application/zip" style="display:none">
+          <button id="pluginPick" class="ghost">选择插件包…</button>
+          <button id="pluginInstall" class="primary">安装 / 升级</button>
+        </div>
+        <div id="pluginMsg" class="msg"></div>
+        <div id="pluginList"></div>
+      </div>
+
+      <div class="svc-box" id="doctorBox">
+        <b>Doctor 诊断</b>
+        <p class="hint" style="margin:6px 0">看端口、安装状态、插件与日志。要发给别人排查，点右上角「生成诊断报告」（Key/密码自动打码）。</p>
+        <div class="actions" style="justify-content:flex-start">
+          <button id="doctorRefresh" class="ghost">刷新诊断</button>
+        </div>
+        <div id="doctorStatus" class="hint"></div>
       </div>
     </section>
   </div>
