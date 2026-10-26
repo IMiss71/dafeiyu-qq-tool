@@ -71,10 +71,7 @@ begin
     '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + ExpandConstant('{tmp}\stop-all-wizards.ps1') + '"',
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  { Stop the running instance silently; no "please close the app" dialog. }
-  if FileExists(ExpandConstant('{app}\launcher\stop-hidden.vbs')) then
-    Exec(ExpandConstant('{sys}\wscript.exe'),
-      '"' + ExpandConstant('{app}\launcher\stop-hidden.vbs') + '"',
-      '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  (* Do NOT stop AstrBot/NapCat here: setup only replaces app files, and
+     stopping them would take the bot offline for every upgrade. *)
   Result := '';
 end;
