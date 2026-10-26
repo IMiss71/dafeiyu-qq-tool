@@ -67,7 +67,7 @@ backend/plugins/{install,manifest,rollback}.js
 | `backend/core/state.js` | 安装状态持久化、原子写、损坏备份、步骤状态/恢复 |
 | `backend/core/steps.js` | 步骤契约、顺序执行、超时、取消、失败回滚 |
 | `backend/core/manifest.js` | 插件包 manifest 校验：semver、路径穿越、SHA256 |
-| `backend/steps/install-plan.js` | 唯一安装计划：preflight → uv → AstrBot → init → NapCat → plugin |
+| `backend/steps/install-plan.js` | 唯一安装计划：preflight → uv → AstrBot → init → NapCat（插件不内置，独立包手动安装） |
 
 已接线：
 
@@ -85,7 +85,7 @@ backend/plugins/{install,manifest,rollback}.js
 - 失败时回退到 18765–18775 端口上的 `node.exe`；
 - 只停向导，不动 AstrBot / NapCat，避免旧 2.1.x 占端口、两个向导抢服务。
 
-## 插件管理器（2.3.0）
+## 插件管理器（2.3.0 起；2.4.0 起工具不内置插件）
 
 ```text
 GET  /api/plugins                 列表 + 备份

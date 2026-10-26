@@ -735,62 +735,9 @@ function ensureAstrbotRoot() {
   return { created };
 }
 
-// ---------- 随包内置的「大肥鱼能力插件」 ----------
-// 为什么必须有这一步：向导只装 AstrBot 本体的话，客户拿到的是「裸 AstrBot」——
-// 语音、识图、记忆、断线补发、主动社交这些能力一个都没有，客户会以为买了个空壳。
-// 所以插件跟着包一起分发（v1.6.0，约 300KB 代码 + 少量示例表情），初始化时自动装上。
-const BUNDLED_PLUGIN_DIR = path.join(__dirname, '..', 'vendor', 'plugin', 'astrbot_plugin_dafeiyu');
-const PLUGIN_DIR = path.join(DATA_DIR, 'plugins', 'astrbot_plugin_dafeiyu');
-
-function readPluginVersion(dir) {
-  try {
-    const y = fs.readFileSync(path.join(dir, 'metadata.yaml'), 'utf8');
-    const m = y.match(/^version:\s*v?([\d.]+)/im);
-    return m ? m[1] : '';
-  } catch (_) {
-    return '';
-  }
-}
-
-// 递归复制：skip 掉用户数据目录；onlyIfMissing 用于表情包（绝不覆盖用户自己放的图）
-function copyDirMerge(src, dst, opts) {
-  const skip = (opts && opts.skip) || [];
-  const onlyIfMissing = !!(opts && opts.onlyIfMissing);
-  fs.mkdirSync(dst, { recursive: true });
-  for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, ent.name);
-    const d = path.join(dst, ent.name);
-    if (ent.isDirectory()) {
-      if (skip.includes(ent.name)) continue;
-      copyDirMerge(s, d, opts);
-    } else {
-      if (onlyIfMissing && fs.existsSync(d)) continue;
-      fs.copyFileSync(s, d);
-    }
-  }
-}
-
-function installBundledPlugin() {
-  if (!fs.existsSync(BUNDLED_PLUGIN_DIR)) {
-    return { installed: false, reason: '分发包里没有内置插件（vendor/plugin 缺失）' };
-  }
-  const before = readPluginVersion(PLUGIN_DIR);
-  const version = readPluginVersion(BUNDLED_PLUGIN_DIR);
-  // 代码：全部覆盖（既是首次安装，也是升级/修复）
-  copyDirMerge(BUNDLED_PLUGIN_DIR, PLUGIN_DIR, { skip: ['data', 'meme_packs', '__pycache__', 'voice', 'tmp'] });
-  // 示例表情：只补缺的，用户自己加的图一张都不动
-  const srcMeme = path.join(BUNDLED_PLUGIN_DIR, 'meme_packs');
-  if (fs.existsSync(srcMeme)) {
-    copyDirMerge(srcMeme, path.join(PLUGIN_DIR, 'meme_packs'), { onlyIfMissing: true });
-  }
-  // 清掉旧字节码：否则改了代码还在跑旧 pyc，表现为「改了没生效」
-  try { fs.rmSync(path.join(PLUGIN_DIR, '__pycache__'), { recursive: true, force: true }); } catch (_) {}
-  try { fs.mkdirSync(path.join(PLUGIN_DIR, 'data'), { recursive: true }); } catch (_) {}
-  const upgraded = !!before && before !== version;
-  log(`大肥鱼插件 ${upgraded ? '已升级' : '已安装'} v${version}${before && upgraded ? `（原 v${before}）` : ''}`);
-  return { installed: true, version, previous: before, upgraded, path: PLUGIN_DIR };
-}
-
+// ---------- 插件不在部署工具里内置 ----------
+// 三档插件包（基础/进阶/全能）作为独立 zip 交付，用户在向导「插件管理」里选择安装。
+// 部署工具只负责 AstrBot + NapCat + 环境，避免安装包膨胀，也避免“工具里带插件”被误分发。
 async function initAstrbot() {
   ensureWorkDir(); // cd 到不存在的目录会失败（全新机器第一次跑）
   ensureAstrbotRoot(); // 先自愈根目录标记，再判断要不要 init
@@ -3303,7 +3250,6 @@ module.exports = {
   installUv,
   installAstrbot,
   initAstrbot,
-  installBundledPlugin,
   installNapCat,
   configureProvider,
   testProvider,

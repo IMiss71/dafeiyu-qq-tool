@@ -48,7 +48,7 @@
           </svg>
         </span>
         <div>
-          <h1>大肥鱼 <span class="brand-tag">QQ AI</span><span class="brand-free">免费开源</span><span class="brand-ver" id="brandVer">v2.3.0</span></h1>
+          <h1>大肥鱼 <span class="brand-tag">QQ AI</span><span class="brand-free">免费开源</span><span class="brand-ver" id="brandVer">v2.4.0</span></h1>
           <p class="sub">填好 Key，扫码登录小号，就能在 QQ 上和大肥鱼聊天</p>
         </div>
         <button id="aboutBtn" class="ghost tiny" style="margin-left:auto" title="开源许可与合规声明">关于</button>
@@ -414,8 +414,9 @@
       </div>
 
       <div class="svc-box" id="pluginBox">
-        <b>插件管理（付费插件包）</b>
-        <p class="hint" style="margin:6px 0">选择插件 zip（包内需有 <code>manifest.json</code>）→ 安装/升级。旧版本自动备份，可回滚；不会动你的 <code>data/</code>。</p>
+        <b>插件管理（付费插件包，工具不内置）</b>
+        <p class="hint" style="margin:6px 0">三档独立插件包：<b>基础版 2 项</b> / <b>进阶版 4 项</b> / <b>全能版 11 项</b>。部署工具只装 AstrBot + NapCat，插件请选择对应 zip 安装。</p>
+        <p class="hint" style="margin:6px 0">包内需有 <code>manifest.json</code>；安装/升级自动备份，可回滚，不会动你的 <code>data/</code> 与表情包。</p>
         <div class="actions" style="justify-content:flex-start">
           <input type="file" id="pluginFile" accept=".zip,application/zip" style="display:none">
           <button id="pluginPick" class="ghost">选择插件包…</button>

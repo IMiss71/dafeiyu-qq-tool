@@ -11,7 +11,6 @@ test('install plan is stable and ordered', () => {
     'install_astrbot',
     'init_astrbot',
     'install_napcat',
-    'install_plugin',
   ]);
   for (const s of createInstallPlan()) {
     assert.equal(typeof s.run, 'function');
@@ -21,13 +20,13 @@ test('install plan is stable and ordered', () => {
 });
 
 test('install plan can skip network-heavy optional steps', () => {
-  const ids = createInstallPlan({ includeNapcat: false, includePlugin: false }).map((s) => s.id);
+  const ids = createInstallPlan({ includeNapcat: false }).map((s) => s.id);
   assert.deepEqual(ids, ['preflight', 'install_uv', 'install_astrbot', 'init_astrbot']);
 });
 
 test('planMeta exposes no functions to the UI', () => {
   const meta = planMeta();
-  assert.equal(meta.length, 6);
+  assert.equal(meta.length, 5);
   assert.equal(meta[0].id, 'preflight');
   assert.equal(meta[0].run, undefined);
 });

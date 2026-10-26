@@ -547,10 +547,8 @@ async function handleApi(req, res, urlPath) {
       const r = await d.runStep('初始化 AstrBot', async () => {
         await d.ensureWorkDir();
         await d.initAstrbot();
-        // 初始化完顺手把随包的大肥鱼能力插件装上（否则客户拿到的是裸 AstrBot）
-        let plugin = null;
-        try { plugin = d.installBundledPlugin(); } catch (e) { plugin = { installed: false, reason: e.message }; }
-        return { plugin };
+        // 插件不内置：初始化只装 AstrBot 本体，插件包由用户在「插件管理」里选择安装。
+        return { plugin: { installed: false, external: true, reason: '插件包独立交付，请在插件管理里选择基础/进阶/全能版 zip' } };
       }, 'init_astrbot');
       return sendJson(res, r.ok ? 200 : 500, r);
     }

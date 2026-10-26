@@ -90,6 +90,14 @@ Get-ChildItem -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue 
 }
 if ($forbiddenCount -eq 0) { Ok 'no forbidden runtime/internal files' }
 
+# 4b) 部署工具不内置插件：插件包独立交付
+$pluginDirs = @(Get-ChildItem -LiteralPath $Stage -Recurse -Directory -Force -ErrorAction SilentlyContinue | Where-Object { (-not (Test-Excluded $_.FullName)) -and (($_.Name -eq 'astrbot_plugin_dafeiyu') -or ($_.FullName -like '*\vendor\plugin*')) })
+if ($pluginDirs.Count -gt 0) {
+  foreach ($p in $pluginDirs) { Fail "deployer must not bundle plugins: $($p.FullName.Substring($Stage.Length + 1))" }
+} else {
+  Ok 'no plugin bundled (three tier zips are delivered separately)'
+}
+
 # 5) secret / fixed-password scan
 $patterns = @(
   @{ Name = 'fixed dashboard password'; Regex = ('DaFeiYu' + '6{3}') },

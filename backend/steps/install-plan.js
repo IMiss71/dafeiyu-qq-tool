@@ -9,7 +9,6 @@ function preflight() { return require('../preflight'); }
 // never exist in one place but not the other.
 function createInstallPlan(opts = {}) {
   const includeNapcat = opts.includeNapcat !== false;
-  const includePlugin = opts.includePlugin !== false;
 
   const steps = [
     {
@@ -44,16 +43,6 @@ function createInstallPlan(opts = {}) {
       title: '安装 NapCat',
       timeoutMs: 600000,
       run: async () => deploy().installNapCat(),
-    });
-  }
-
-  if (includePlugin) {
-    steps.push({
-      id: 'install_plugin',
-      title: '安装插件（可选）',
-      timeoutMs: 120000,
-      optional: true,
-      run: async () => deploy().installBundledPlugin(),
     });
   }
 
