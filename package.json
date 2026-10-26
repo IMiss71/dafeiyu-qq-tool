@@ -1,0 +1,17 @@
+{
+  "name": "dafeiyu-qq-deployer",
+  "version": "2.2.0",
+  "description": "大肥鱼 QQ AI 一键部署向导（AstrBot + NapCat，MIT，免费）",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node backend/server.js",
+    "wizard": "node backend/server.js",
+    "test": "node --test tests",
+    "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1",
+    "build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

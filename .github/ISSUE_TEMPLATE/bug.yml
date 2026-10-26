@@ -1,0 +1,63 @@
+name: Bug report
+description: 报告一个可复现的问题（不要贴 QQ 号 / Key / 密码）
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请先确认：用的是 Releases 里的版本，不是直接双击 `wizard/index.html`。
+        不要在 issue 里贴 QQ 号、API Key、面板密码或完整日志；用向导里的“生成诊断报告”并打码。
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 向导“关于”页或安装包文件名里的版本
+      placeholder: "2.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: 系统
+      options:
+        - Windows 11
+        - Windows 10 22H2+
+        - Windows 10 更早
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 哪个步骤、点了什么、期望是什么、实际是什么
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开向导
+        2. 点...
+        3. 看到...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 诊断包 / 日志（已打码）
+      description: 拖入向导生成的诊断 txt，或贴 wizard.err.log 的前 30 行
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认
+      options:
+        - label: 我用的是 Releases 版本
+          required: true
+        - label: 我没有粘贴 QQ 号 / API Key / 面板密码
+          required: true

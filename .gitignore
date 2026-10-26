@@ -1,0 +1,38 @@
+# build outputs
+/dist/
+/build/
+/out/
+
+# runtime payload (not source; see docs/payload.md)
+/payload/
+/tools/node.exe
+/tools/python/
+/vendor/NapCat.Shell.zip
+
+# runtime state
+wizard.log
+wizard.err.log
+wizard.lock
+wizard.port
+astrbot.log
+astrbot.log.1
+napcat.log
+*.log
+*.log.1
+*.bak
+*.bak-*
+
+# python cache
+__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+node_modules/
+
+# local test artifacts
+/tests/tmp/

@@ -1,0 +1,19 @@
+NapCat 来源与许可（默认不随包）
+====================================
+
+默认分发包**不包含** NapCat.Shell.zip：
+  安装时由向导从 NapCat 官方 release 下载，并校验 SHA256。
+
+项目地址：https://github.com/NapNeko/NapCatQQ
+作者 / 版权：Mlikiowa 及 NapCat 贡献者
+许可证：Limited Redistribution License（全文见同目录 LICENSE-NAPCAT.txt）
+
+可选离线包：
+  如果确实需要离线安装，把官方 NapCat.Shell.zip 放到 vendor\ 目录
+  （或构建时的 payload\NapCat.Shell.zip），并保留本目录的 LICENSE-NAPCAT.txt。
+  离线包仅限个人非商业使用；对外收费/代部署前，请先联系 NapCat 作者取得授权。
+
+构建行为：
+  vendor\NapCat.Shell.zip 存在且大于 20MB 时，安装默认走离线解压；
+  否则走多镜像联网下载。可用 DAFEIYU_NAPCAT_OFFLINE=0 强制联网，
+  或 DAFEIYU_NAPCAT_OFFLINE=1 强制离线。

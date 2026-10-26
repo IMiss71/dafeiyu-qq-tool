@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "product": "dafeiyu-qq-deployer",
+  "version": "0.0.0",
+  "git_commit": "",
+  "built_at": "",
+  "min_windows": "10.0.19042",
+  "node": ">=20",
+  "files": 0,
+  "sha256": "",
+  "checks": {
+    "bom": false,
+    "secrets": false,
+    "forbidden_files": false,
+    "syntax": false,
+    "smoke": false
+  }
+}

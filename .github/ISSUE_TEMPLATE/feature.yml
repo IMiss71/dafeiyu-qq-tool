@@ -1,0 +1,41 @@
+name: Feature request
+description: 提一个功能建议（请说明它解决什么问题）
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的问题
+      description: 不要先写方案，先写场景和痛点
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你希望的解决方式
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 影响范围
+      options:
+        - 安装 / 升级 / 卸载
+        - 模型配置
+        - NapCat / 连接
+        - 诊断 / 日志
+        - 插件包管理
+        - 文档
+        - 其他
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: 约束
+      options:
+        - label: 这个功能不需要新增付费服务/依赖
+          required: true
+        - label: 这个功能不会把本地端口暴露到局域网
+          required: true

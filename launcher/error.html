@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大肥鱼部署向导 · 启动失败</title>
+<style>
+  body{margin:0;background:#0f172a;color:#e2e8f0;font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .card{max-width:720px;padding:32px 36px;background:#111c33;border:1px solid #24324d;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  h1{margin:0 0 8px;font-size:24px}
+  .sub{color:#93a4c3;margin:0 0 24px}
+  ol{padding-left:22px;margin:0 0 20px}
+  li{margin:8px 0}
+  code{background:#0b1324;border:1px solid #24324d;border-radius:6px;padding:2px 6px}
+  a{color:#7dd3fc}
+  .hint{font-size:14px;color:#93a4c3;border-top:1px solid #24324d;padding-top:16px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>向导没有启动起来</h1>
+  <p class="sub">通常是 Node 运行时缺失、文件被拦截，或端口被占用。按下面顺序看一下即可。</p>
+  <ol>
+    <li>确认安装目录里有 <code>tools\node.exe</code>；没有就重装一次。</li>
+    <li>打开 <a href="../wizard.err.log">wizard.err.log</a>，最上面的报错就是原因。</li>
+    <li>杀毒软件可能拦截了 <code>node.exe</code>：把安装目录加入信任，再点一次桌面快捷方式。</li>
+    <li>如果提示端口被占用，先运行开始菜单里的“停止大肥鱼”，再重试。</li>
+  </ol>
+  <p class="hint">这个页面是本地文件，不会上传任何信息。日志在安装目录下，发给人看之前可以先把里面的 QQ 号/Key 打码。</p>
+</div>
+</body>
+</html>
