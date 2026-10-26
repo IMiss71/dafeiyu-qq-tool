@@ -12,6 +12,8 @@ const lic = require('./license');
 const pro = require('./pro_features');
 const pf = require('./preflight');
 const doctor = require('./doctor');
+const { InstallState } = require('./core/state');
+const { runInstallPlan, planMeta } = require('./steps/install-plan');
 
 const WIZARD_DIR = path.join(__dirname, '..', 'wizard');
 const PERSONA_PATH = path.join(__dirname, '..', 'assets', 'dafeiyu_persona.txt');
@@ -39,6 +41,7 @@ function sendJson(res, code, obj) {
 // ---------- 进度推送（SSE）----------
 // 下载/装包都在 deploy.js 里跑，通过 sink 把进度送到这里再广播给所有开着向导的页面。
 const sseClients = new Set();
+let planBusy = false;
 d.setProgressSink((evt) => {
   if (!sseClients.size) return;
   const payload = `data: ${JSON.stringify(evt)}\n\n`;
@@ -165,6 +168,9 @@ async function handleApi(req, res, urlPath) {
     if (req.method === 'GET' && urlPath === '/api/install-state') {
       // 安装状态：步骤/时间/错误，供向导断点恢复和排障使用。
       return sendJson(res, 200, Object.assign({ ok: true }, d.getInstallState()));
+    }
+    if (req.method === 'GET' && urlPath === '/api/install-plan') {
+      return sendJson(res, 200, { ok: true, steps: planMeta() });
     }
     if (req.method === 'POST' && urlPath === '/api/kill-port') {
       // 一键释放被占用的端口（白名单内才杀，绝不误伤系统进程）
@@ -346,15 +352,47 @@ async function handleApi(req, res, urlPath) {
       const r = await d.runStep('清空环境', d.resetEnvironment, 'reset_environment');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
+    if (req.method === 'POST' && urlPath === '/api/install-all') {
+      // 服务端一键安装：步骤、状态、超时和回滚都在后端，前端只负责显示。
+      if (planBusy) {
+        return sendJson(res, 429, { ok: false, busy: true, error: '一键安装正在进行中，请等它完成' });
+      }
+      if (d.getBusyStep()) {
+        return sendJson(res, 429, { ok: false, busy: true, error: `正在「${d.getBusyStep()}」，请等它完成` });
+      }
+      planBusy = true;
+      const state = InstallState.load(path.join(d.WORK_DIR, 'install-state.json'));
+      try {
+        await runInstallPlan({}, state, {
+          onStepStart: (s) => d.emitProgress({ kind: 'step', name: '一键安装：' + s.title, state: 'start' }),
+          onStepDone: (s) => d.emitProgress({ kind: 'step', name: '一键安装：' + s.title, state: 'ok' }),
+        });
+        return sendJson(res, 200, { ok: true, state: state.summary() });
+      } catch (e) {
+        d.emitProgress({ kind: 'step', name: '一键安装失败', state: 'fail', error: (e && (e.userMessage || e.message)) || '未知错误' });
+        return sendJson(res, 500, {
+          ok: false,
+          code: (e && e.code) || 'E_INSTALL',
+          error: (e && (e.userMessage || e.message)) || '安装失败',
+          remediation: (e && e.remediation) || '',
+          retryable: !(e && e.retryable === false),
+        });
+      } finally {
+        planBusy = false;
+      }
+    }
     if (req.method === 'POST' && urlPath === '/api/install-uv') {
+      if (planBusy) return sendJson(res, 429, { ok: false, busy: true, error: '一键安装正在进行中，请等它完成' });
       const r = await d.runStep('安装 uv', d.installUv, 'install_uv');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/install-astrbot') {
+      if (planBusy) return sendJson(res, 429, { ok: false, busy: true, error: '一键安装正在进行中，请等它完成' });
       const r = await d.runStep('安装 AstrBot', d.installAstrbot, 'install_astrbot');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/install-napcat') {
+      if (planBusy) return sendJson(res, 429, { ok: false, busy: true, error: '一键安装正在进行中，请等它完成' });
       const r = await d.runStep('安装 NapCat（下载+解压）', d.installNapCat, 'install_napcat');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
@@ -400,6 +438,7 @@ async function handleApi(req, res, urlPath) {
       }
     }
     if (req.method === 'POST' && urlPath === '/api/init') {
+      if (planBusy) return sendJson(res, 429, { ok: false, busy: true, error: '一键安装正在进行中，请等它完成' });
       const r = await d.runStep('初始化 AstrBot', async () => {
         await d.ensureWorkDir();
         await d.initAstrbot();
@@ -407,7 +446,7 @@ async function handleApi(req, res, urlPath) {
         let plugin = null;
         try { plugin = d.installBundledPlugin(); } catch (e) { plugin = { installed: false, reason: e.message }; }
         return { plugin };
-      });
+      }, 'init_astrbot');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/configure') {

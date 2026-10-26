@@ -588,71 +588,35 @@ $('#installNap').addEventListener('click', async () => {
 
 $('#toInstall').addEventListener('click', () => goStep(2));
 
-// 一键安装全部：把「uv/Python → AstrBot → NapCat」三步串成一个按钮。
-// 已经装好的部分自动跳过（断点续装），哪步失败就停在哪步并说明原因——
-// 单独的三个按钮保留着，给想分步来或想重试单步的高级用户。
+// 一键安装全部：交给后端 install-plan（带步骤状态/超时/回滚）。
+// 已经装好的步骤会由各 install 函数自动跳过；单独的按钮保留给高级用户。
 $('#installAll').addEventListener('click', async () => {
   setScope('env');
   const btn = $('#installAll');
   btn.disabled = true;
   ['#installPre', '#installAstr', '#installNap', '#resetEnv', '#toInstall'].forEach((s) => ($(s).disabled = true));
-  const unlock = () => {
-    $('#toInstall').disabled = false;
-    checkEnv(); // 里面的 renderStatus 会按最新状态重设所有按钮
-  };
-
-  const st0 = await api('/api/status').catch(() => ({}));
-  renderStatus(st0);
-  const need = [];
-  if (!st0.uv) need.push({ name: 'uv + Python', api: '/api/install-uv' });
-  if (!st0.steps.astrbot) need.push({ name: 'AstrBot', api: '/api/install-astrbot', init: true });
-  if (!st0.napcat) need.push({ name: 'NapCat', api: '/api/install-napcat' });
-
-  if (!need.length) {
-    paintProgress('env', { phase: '全部组件都已就绪，无需安装', percent: 100, done: true });
-    btn.disabled = false;
-    $('#toInstall').disabled = false;
-    return;
-  }
-
   progressReset('env', '开始一键安装…');
+  btn.textContent = '一键安装中，请勿关闭…';
   let failMsg = '';
-  for (let i = 0; i < need.length; i++) {
-    const st = need[i];
-    btn.textContent = `（${i + 1}/${need.length}）安装 ${st.name}…`;
-    let r;
-    try {
-      r = await api(st.api, 'POST');
-      // AstrBot 装完要顺手初始化数据目录并装随包插件（和单独按钮的行为一致）
-      if (st.init && r.ok) {
-        btn.textContent = `（${i + 1}/${need.length}）初始化 AstrBot…`;
-        const ir = await api('/api/init', 'POST');
-        if (!ir.ok && !ir.busy) r = { ok: false, error: ir.error || '初始化失败' };
-      }
-    } catch (e) {
-      r = { ok: false, error: e.message };
+  try {
+    const r = await api('/api/install-all', 'POST');
+    if (!r || !r.ok) {
+      failMsg = (r && (r.error || r.remediation)) || '安装失败';
     }
-    if (!r.ok && !r.busy) {
-      failMsg = `${st.name} 安装失败：${r.error || '未知错误'}`;
-      break;
-    }
-    if (r.busy) {
-      // 后端有别的任务在跑：不是失败，提示后继续等这一个的结果
-      paintProgress('env', { phase: r.error || '正在安装中，请稍等…', percent: 60, indeterminate: true });
-    }
+  } catch (e) {
+    failMsg = e.message || '安装失败';
   }
 
   if (failMsg) {
     progressFail('env', failMsg);
     btn.textContent = '❌ ' + failMsg.slice(0, 46);
-    btn.disabled = false;
-    $('#toInstall').disabled = false;
-    setTimeout(checkEnv, 800);
   } else {
     paintProgress('env', { phase: '全部安装完成！可以点「下一步」继续', percent: 100, done: true });
     btn.textContent = '✅ 全部就绪';
-    unlock();
   }
+  btn.disabled = false;
+  $('#toInstall').disabled = false;
+  setTimeout(checkEnv, 600);
 });
 
 // 清空重来：只清沙盒数据（配置/人设/NapCat/ffmpeg），AstrBot 程序保留，

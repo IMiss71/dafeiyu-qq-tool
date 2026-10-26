@@ -3309,6 +3309,7 @@ module.exports = {
   testProvider,
   listModels,
   setProgressSink,
+  emitProgress,
   downloadFile,
   downloadRace,
   registerCloudCaptionProvider,

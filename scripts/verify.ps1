@@ -231,6 +231,13 @@ if (-not $SkipSmoke) {
           } catch {
             Fail "smoke: /api/install-state failed: $($_.Exception.Message)"
           }
+          try {
+            $r4 = Invoke-WebRequest -Uri "$base/api/install-plan" -UseBasicParsing -Headers @{ 'X-DaFeiYu-Wizard' = $tokenMatch.Groups[1].Value } -TimeoutSec 5
+            $j4 = $r4.Content | ConvertFrom-Json
+            if ($r4.StatusCode -ne 200 -or -not $j4.ok -or @($j4.steps).Count -lt 1) { Fail "smoke: /api/install-plan invalid" }
+          } catch {
+            Fail "smoke: /api/install-plan failed: $($_.Exception.Message)"
+          }
         }
         if ($script:fail -eq 0) { Ok "smoke: server up, token injected, API gated" }
       }

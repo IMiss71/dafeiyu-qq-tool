@@ -4,7 +4,8 @@
 
 - `deploy.runStep(name, fn, id)` 写入 `install-state.json`；新增 `GET /api/install-state`。
 - 新增 `backend/steps/install-plan.js`：唯一安装计划（preflight → uv → AstrBot → init → NapCat → plugin）与 `planMeta()`。
-- `install-plan` 尚未接到“一键安装”按钮；现有按钮仍走单个 `runStep`，行为不变。
+- 新增 `GET /api/install-plan` 与 `POST /api/install-all`；前端“一键安装全部”已改为走后端计划。
+- `planBusy` 与单步 `runStep` 互斥；单步按钮保留。
 - 单测 19 项通过。
 
 ## 2.2.1 - 2026-10-26

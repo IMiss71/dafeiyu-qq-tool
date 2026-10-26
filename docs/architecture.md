@@ -73,7 +73,9 @@ backend/plugins/{install,manifest,rollback}.js
 
 - `deploy.runStep(name, fn, id)` 现在会写 `%LOCALAPPDATA%\DaFeiYuQQ\install-state.json`；
 - `GET /api/install-state` 返回步骤、时间、错误；
-- 现有向导按钮仍调用单个 step（行为不变）；`runInstallPlan` 尚未接到“一键安装”按钮，下一步再接。
+- `GET /api/install-plan` 返回计划元数据；
+- `POST /api/install-all` 执行完整计划，`planBusy` 与单步 `runStep` 互斥；
+- 前端“一键安装全部”按钮已改为调用 `/api/install-all`；单步按钮保留给高级用户。
 
 ## 升级清理（2.2.1）
 
