@@ -44,8 +44,12 @@ Source: "..\build\stage\tools\stop-all-wizards.ps1"; DestDir: "{tmp}"; Flags: do
 
 [Icons]
 Name: "{group}\大肥鱼部署向导"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Comment: "打开大肥鱼部署向导"
+Name: "{group}\启动大肥鱼"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\一键启动大肥鱼.vbs"""; WorkingDir: "{app}"; Comment: "一键启动 AstrBot + NapCat（无窗口）"
 Name: "{group}\停止大肥鱼"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\stop-hidden.vbs"""; WorkingDir: "{app}"; Comment: "停止向导与后台服务"
+Name: "{group}\停止大肥鱼（仅机器人）"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\一键停止大肥鱼.vbs"""; WorkingDir: "{app}"; Comment: "只停止 AstrBot + NapCat，不关向导"
 Name: "{autodesktop}\大肥鱼部署向导"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Comment: "打开大肥鱼部署向导"
+Name: "{autodesktop}\启动大肥鱼"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\一键启动大肥鱼.vbs"""; WorkingDir: "{app}"; Comment: "一键启动 AstrBot + NapCat（无窗口）"
+Name: "{autodesktop}\停止大肥鱼"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\一键停止大肥鱼.vbs"""; WorkingDir: "{app}"; Comment: "一键停止 AstrBot + NapCat"
 
 [Run]
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Flags: nowait skipifsilent

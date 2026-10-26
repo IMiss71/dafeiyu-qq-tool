@@ -83,9 +83,12 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -SkipSmoke
 
 ## 日常使用
 
-- 启动：双击桌面/开始菜单“大肥鱼部署向导”。
-- 停止：开始菜单“停止大肥鱼”，或 `launcher\stop-hidden.vbs`。
+- 初次部署 / 改模型、扫码、看 Doctor：双击「大肥鱼部署向导」。
+- 日常启动机器人：双击桌面「启动大肥鱼」（AstrBot + NapCat，无窗口）。
+- 日常停止机器人：双击桌面「停止大肥鱼」；只想停机器人、不关向导时用「停止大肥鱼（仅机器人）」。
+- 完全停止：开始菜单「停止大肥鱼」，或 `launcher\stop-hidden.vbs`。
 - 完全卸载：Windows 设置 → 应用 → 大肥鱼 QQ 部署向导。
+- 详细说明：`docs/one-click.md`。
 - 面板密码：**每次安装随机生成**，在向导完成页 / “关于”页显示，也写在
   `%LOCALAPPDATA%\DaFeiYuQQ\dashboard_credentials.json`。
 - 不再使用固定面板密码。
