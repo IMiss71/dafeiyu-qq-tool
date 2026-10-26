@@ -2,3 +2,4 @@
 // which fails under restricted Windows sandboxes). CI can still use `node --test`.
 require('./static.test.js');
 require('./core.test.js');
+require('./plan.test.js');

@@ -162,6 +162,10 @@ async function handleApi(req, res, urlPath) {
       // 前端据此在安装前就给出处理办法，而不是等装到一半失败再猜。
       return sendJson(res, 200, await pf.run());
     }
+    if (req.method === 'GET' && urlPath === '/api/install-state') {
+      // 安装状态：步骤/时间/错误，供向导断点恢复和排障使用。
+      return sendJson(res, 200, Object.assign({ ok: true }, d.getInstallState()));
+    }
     if (req.method === 'POST' && urlPath === '/api/kill-port') {
       // 一键释放被占用的端口（白名单内才杀，绝不误伤系统进程）
       const body = await readBody(req);
@@ -339,19 +343,19 @@ async function handleApi(req, res, urlPath) {
       if (!body || body.confirm !== '清空环境') {
         return sendJson(res, 400, { ok: false, error: '缺少确认参数。清空环境请从向导页面操作，并看清弹窗提示。' });
       }
-      const r = await d.runStep('清空环境', d.resetEnvironment);
+      const r = await d.runStep('清空环境', d.resetEnvironment, 'reset_environment');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/install-uv') {
-      const r = await d.runStep('安装 uv', d.installUv);
+      const r = await d.runStep('安装 uv', d.installUv, 'install_uv');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/install-astrbot') {
-      const r = await d.runStep('安装 AstrBot', d.installAstrbot);
+      const r = await d.runStep('安装 AstrBot', d.installAstrbot, 'install_astrbot');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/install-napcat') {
-      const r = await d.runStep('安装 NapCat（下载+解压）', d.installNapCat);
+      const r = await d.runStep('安装 NapCat（下载+解压）', d.installNapCat, 'install_napcat');
       return sendJson(res, r.ok ? 200 : 500, r);
     }
     if (req.method === 'POST' && urlPath === '/api/start-napcat') {

@@ -59,7 +59,7 @@ backend/plugins/{install,manifest,rollback}.js
 
 每个 step 实现 `{ id, title, run, verify, rollback, timeoutMs }`，安装状态写入 `state.json`，支持恢复/取消/回滚。
 
-## 3.0 基础模块（已落地，未接线）
+## 3.0 基础模块（部分接线）
 
 | 文件 | 作用 |
 |---|---|
@@ -67,8 +67,13 @@ backend/plugins/{install,manifest,rollback}.js
 | `backend/core/state.js` | 安装状态持久化、原子写、损坏备份、步骤状态/恢复 |
 | `backend/core/steps.js` | 步骤契约、顺序执行、超时、取消、失败回滚 |
 | `backend/core/manifest.js` | 插件包 manifest 校验：semver、路径穿越、SHA256 |
+| `backend/steps/install-plan.js` | 唯一安装计划：preflight → uv → AstrBot → init → NapCat → plugin |
 
-这些模块目前**没有被 `deploy.js` 调用**，先以单测锁定契约；下一阶段再把 `preflight`、`install_napcat` 等步骤逐个迁进去。
+已接线：
+
+- `deploy.runStep(name, fn, id)` 现在会写 `%LOCALAPPDATA%\DaFeiYuQQ\install-state.json`；
+- `GET /api/install-state` 返回步骤、时间、错误；
+- 现有向导按钮仍调用单个 step（行为不变）；`runInstallPlan` 尚未接到“一键安装”按钮，下一步再接。
 
 ## 升级清理（2.2.1）
 

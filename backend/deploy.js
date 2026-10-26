@@ -23,6 +23,7 @@ const {
   CLOUD_MAX_CONTEXT_LENGTH,
   LOCAL_MAX_CONTEXT_LENGTH,
 } = require('./config_templates');
+const { InstallState } = require('./core/state');
 
 // ... 端口常量见下方（DASHBOARD_PORT=16885 避开已有实例）
 
@@ -256,23 +257,46 @@ function getBusyStep() {
   return busyStep;
 }
 
-async function runStep(name, fn) {
+// Durable install state. It must never block an install: every state write is best-effort.
+const INSTALL_STATE_FILE = path.join(WORK_DIR, 'install-state.json');
+let _installState = null;
+function installState() {
+  if (!_installState) _installState = InstallState.load(INSTALL_STATE_FILE);
+  return _installState;
+}
+function getInstallState() {
+  try { return installState().summary(); } catch (e) { return { status: 'unknown', error: e.message, steps: [] }; }
+}
+function stateSafe(fn) {
+  try { fn(); } catch (e) { log(`[state] ${e.message}`); }
+}
+function describeResult(r) {
+  if (r === undefined || r === null) return '';
+  if (typeof r === 'string') return r.slice(0, 2000);
+  try { return JSON.stringify(r).slice(0, 2000); } catch (_) { return ''; }
+}
+
+async function runStep(name, fn, stateId) {
   if (busyStep) {
     const msg = `正在「${busyStep}」，请等它完成（约 1~3 分钟）`;
     log(`⏭ 跳过重复的「${name}」：${msg}`);
     return { ok: false, error: msg, busy: true };
   }
   busyStep = name;
+  const id = stateId || name;
+  stateSafe(() => installState().beginStep(id, name));
   try {
     log(`▶ ${name}`);
     emitProgress({ kind: 'step', name, state: 'start' });
     const r = await fn();
     log(`✔ ${name}`);
     emitProgress({ kind: 'step', name, state: 'ok' });
+    stateSafe(() => installState().completeStep(id, describeResult(r)));
     return { ok: true, ...r };
   } catch (e) {
     log(`✘ ${name}: ${e.message}`);
     emitProgress({ kind: 'step', name, state: 'fail', error: e.message });
+    stateSafe(() => installState().failStep(id, e));
     return { ok: false, error: e.message };
   } finally {
     busyStep = null; // 无论成功失败都必须释放，否则一次失败后永远装不了
@@ -3302,6 +3326,7 @@ module.exports = {
   resetEnvironment,
   runStep,
   getBusyStep,
+  getInstallState,
   credentials,
   readAstrbotCredentials,
   readNapCatCredentials,
