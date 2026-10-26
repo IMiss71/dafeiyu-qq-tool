@@ -47,7 +47,7 @@ Name: "{group}\停止大肥鱼"; Filename: "{sys}\wscript.exe"; Parameters: """{
 Name: "{autodesktop}\大肥鱼部署向导"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Comment: "打开大肥鱼部署向导"
 
 [Run]
-Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Flags: nowait
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\start-hidden.vbs"""; WorkingDir: "{app}"; Flags: nowait skipifsilent
 
 [UninstallRun]
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\launcher\stop-hidden.vbs"""; Flags: runhidden waituntilterminated

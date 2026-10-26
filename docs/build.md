@@ -42,6 +42,21 @@ payload\
 powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -IncludePayload
 ```
 
+## 没有 iscc 时
+
+`build.ps1` 会按下面顺序找编译器：
+
+1. PATH 里的 `iscc.exe`
+2. `tools\InnoSetup6\app\ISCC.exe`（便携/解压版）
+3. `tools\InnoSetup6\ISCC.exe`
+4. `%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`
+
+找不到就只出 portable zip。想出 `Setup.exe`：
+
+- 装一次免费的 Inno Setup 6；或
+- 用 innoextract 把官方 `innosetup-6.0.5.exe` 解到 `tools\InnoSetup6\app`（本仓库不提交这些文件，`.gitignore` 已排除）。
+
+
 没有 `payload\node.exe` 时，构建仍可通过，但目标机器必须自己装 Node。
 
 ## verify.ps1 做了什么
